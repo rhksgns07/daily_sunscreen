@@ -7,8 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_uv_index(lat, lon, api_key):
-    # One Call 3.0 API 호출 시 exclude 파라미터가 유용할 수 있습니다.
-    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={api_key}&units=metric&exclude=minutely,hourly,daily,alerts"
+    # 일반 날씨 API로 수정 (구독 불필요)
+    # 일반 API는 UVI를 직접 제공하지 않으므로 UVI API를 호출해야 합니다.
+    url = f"https://api.openweathermap.org/data/2.5/uvi?lat={lat}&lon={lon}&appid={api_key}"
     
     print(f"DEBUG: [STARTED] get_uv_index")
     print(f"DEBUG: URL: {url}")
@@ -22,12 +23,10 @@ def get_uv_index(lat, lon, api_key):
             raise Exception(f"API 호출 실패: {response.status_code}")
             
         data = response.json()
-        print(f"DEBUG: JSON Data keys: {data.keys()}")
+        print(f"DEBUG: API Response: {data}")
         
-        if 'current' not in data:
-            raise KeyError(f"API 응답에 'current' 데이터가 없습니다.")
-            
-        return data['current']['uvi']
+        # 일반 UVI API 응답 구조는 {'lat': ..., 'lon': ..., 'date': ..., 'value': ...}
+        return data['value']
         
     except Exception as e:
         print(f"DEBUG: [EXCEPTION] {e}")
