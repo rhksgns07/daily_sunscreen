@@ -7,10 +7,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_uv_index(lat, lon, api_key):
-    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={api_key}"
-    response = requests.get(url).json()
-    # OpenWeatherMap One Call 3.0 returns uvi in current object
-    return response['current']['uvi']
+    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={api_key}&units=metric"
+    print(f"DEBUG: Requesting URL: {url}")
+    response = requests.get(url)
+    data = response.json()
+    
+    print(f"DEBUG: API Response: {data}")
+    
+    if 'current' not in data:
+        raise KeyError(f"API 응답에 'current' 데이터가 없습니다. HTTP 상태 코드: {response.status_code}, 응답: {data}")
+        
+    return data['current']['uvi']
 
 def get_uv_level(uvi):
     if uvi < 3:
@@ -31,17 +38,26 @@ async def main():
     lat = os.getenv('LATITUDE')
     lon = os.getenv('LONGITUDE')
 
-    uvi = get_uv_index(lat, lon, api_key)
-    level = get_uv_level(uvi)
+    # 환경변수가 None인지 확인
+    if not all([token, chat_id, api_key, lat, lon]):
+        print("에러: 환경변수가 설정되지 않았습니다.")
+        return
 
-    message = f"☀️ 오늘 자외선 지수: {uvi} ({level})\n"
-    if uvi >= 3:
-        message += "자외선 지수가 높으니 선크림을 꼭 바르세요!"
-    else:
-        message += "오늘은 선크림을 바르지 않아도 됩니다."
+    try:
+        uvi = get_uv_index(lat, lon, api_key)
+        level = get_uv_level(uvi)
 
-    bot = Bot(token=token)
-    await bot.send_message(chat_id=chat_id, text=message)
+        message = f"☀️ 오늘 자외선 지수: {uvi} ({level})\n"
+        if uvi >= 3:
+            message += "자외선 지수가 높으니 선크림을 꼭 바르세요!"
+        else:
+            message += "오늘은 선크림을 바르지 않아도 됩니다."
+
+        bot = Bot(token=token)
+        await bot.send_message(chat_id=chat_id, text=message)
+        print("메시지 전송 성공!")
+    except Exception as e:
+        print(f"실행 중 에러 발생: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())
