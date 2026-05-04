@@ -7,17 +7,31 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_uv_index(lat, lon, api_key):
-    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={api_key}&units=metric"
-    print(f"DEBUG: Requesting URL: {url}")
-    response = requests.get(url)
-    data = response.json()
+    # One Call 3.0 API 호출 시 exclude 파라미터가 유용할 수 있습니다.
+    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={api_key}&units=metric&exclude=minutely,hourly,daily,alerts"
     
-    print(f"DEBUG: API Response: {data}")
+    print(f"DEBUG: [STARTED] get_uv_index")
+    print(f"DEBUG: URL: {url}")
     
-    if 'current' not in data:
-        raise KeyError(f"API 응답에 'current' 데이터가 없습니다. HTTP 상태 코드: {response.status_code}, 응답: {data}")
+    try:
+        response = requests.get(url, timeout=10)
+        print(f"DEBUG: Status Code: {response.status_code}")
         
-    return data['current']['uvi']
+        if response.status_code != 200:
+            print(f"DEBUG: Error Response: {response.text}")
+            raise Exception(f"API 호출 실패: {response.status_code}")
+            
+        data = response.json()
+        print(f"DEBUG: JSON Data keys: {data.keys()}")
+        
+        if 'current' not in data:
+            raise KeyError(f"API 응답에 'current' 데이터가 없습니다.")
+            
+        return data['current']['uvi']
+        
+    except Exception as e:
+        print(f"DEBUG: [EXCEPTION] {e}")
+        raise e
 
 def get_uv_level(uvi):
     if uvi < 3:
