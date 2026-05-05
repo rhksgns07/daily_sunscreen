@@ -1,7 +1,8 @@
 name: UV Alert
 on:
   schedule:
-    - cron: '0 22 * * *'
+    - cron: '0 7 * * *'
+      timezone: 'Asia/Seoul'
   workflow_dispatch:
 
 jobs:
